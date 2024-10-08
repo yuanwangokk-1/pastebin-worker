@@ -1,0 +1,64 @@
+name: PR tests
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - ref: ${{ github.ref }}
+            name: "head"
+          - ref: "goshujin"
+            name: "goshujin"
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+
+      - name: "Install Node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: "Install Deps"
+        run: yarn install
+
+      - name: "Test"
+        run: yarn coverage
+
+      - name: "Upload Coverage"
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.name }}
+          path: coverage
+
+  report-coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Download HEAD coverage artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-head
+          path: coverage
+
+      - name: "Download goshujin coverage artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-goshujin
+          path: coverage-goshujin
+
+      - name: "Report Coverage"
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          json-summary-compare-path: coverage-goshujin/coverage-summary.json

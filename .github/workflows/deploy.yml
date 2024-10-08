@@ -1,0 +1,30 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - goshujin
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Install Node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: "Setup"
+        run: yarn install
+
+      - name: "Test"
+        run: yarn test
+
+      - name: "Deploy"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          yarn deploy
